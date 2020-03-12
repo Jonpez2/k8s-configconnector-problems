@@ -1,0 +1,66 @@
+load("@k8s_configconnector//:defaults.bzl", "k8s_configconnector")
+load("@io_bazel_rules_k8s//k8s:objects.bzl", "k8s_objects")
+load("@username//:user.bzl", "USER_NAME")
+
+CLUSTER_LOCATION = "us-central1"
+
+# We export this file so that the inline tests can see the production DDL
+exports_files(["spanner-db.yaml"])
+
+substitutions = {
+    "{BUILD_USER}": USER_NAME,
+    #        For a global config, for throughput testing, use this
+    #        "{SPANNER_INSTANCE_CONFIG}": "nam-eur-asia1",
+    #        The default is the way cheaper regional config:
+    "{SPANNER_INSTANCE_CONFIG}": "regional-us-central1",
+    "{CLUSTER_LOCATION}": CLUSTER_LOCATION,
+}
+
+k8s_configconnector(
+    name = "spanner-instance",
+    substitutions = substitutions,
+    template = ":spanner-instance.yaml",
+)
+
+k8s_configconnector(
+    name = "spanner-db",
+    substitutions = substitutions,
+    template = ":spanner-db.yaml",
+)
+
+k8s_configconnector(
+    name = "spanner-roles",
+    substitutions = substitutions,
+    template = ":spanner-roles.yaml",
+)
+
+k8s_configconnector(
+    name = "cluster",
+    substitutions = substitutions,
+    template = ":cluster.yaml",
+)
+
+k8s_configconnector(
+    name = "main-node-pool",
+    substitutions = substitutions,
+    template = ":node-pool.yaml",
+)
+
+k8s_configconnector(
+    name = "service-account",
+    substitutions = substitutions,
+    template = ":service-account.yaml",
+)
+
+k8s_objects(
+    name = "k8s-all",
+    testonly = True,
+    objects = [
+        ":service-account",
+        ":spanner-instance",
+        ":spanner-db",
+        ":spanner-roles",
+        ":cluster",
+        ":main-node-pool",
+    ],
+)
